@@ -8,7 +8,31 @@ import torch.nn.init as init
 class VGG(nn.Module):
     
     def __init__(self, features):
-        super(VGG, self
+        super(VGG, self).__init__()
+        self.features = features
+        #final classifier two FCs with dropout and a third FC with 10 class output
+        self.classifier = nn.Sequential(
+            nn.Dropout(),
+            nn.Linear(512, 512),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(512, 512),
+            nn.ReLU(True),
+            nn.Linear(512, 10),
+        )
+        
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weigth.data.normal_(0, math.sqrt(2./n))
+                m.bias.data.zero_()
+    
+    def forward(self, x):
+        x = self.features(x)
+        x = x.view(x.size(0), -1)
+        x = self.classifiers(x)
+        return x
+           
 
 def make_layers(config, batch_norm=False):
     layers = []
