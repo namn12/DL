@@ -1,2 +1,2 @@
 # DL
-#Repository of neural network models implemented using Pytorch
+Repository of neural network models implemented using Pytorch
