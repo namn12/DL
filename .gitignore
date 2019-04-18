@@ -6,6 +6,10 @@ __pycache__/
 #files
 *.tar
 
+#folders
+data/
+/data
+
 # C extensions
 *.so
 
