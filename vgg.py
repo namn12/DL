@@ -5,7 +5,7 @@ import math
 import torch.nn as nn
 import torch.nn.init as init
 
-class VGG(nn.Module):
+class VGG(nn.Module): #make subclass VGG - the super class is inside the parentheses. 
     
     def __init__(self, features):
         super(VGG, self).__init__()
