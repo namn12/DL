@@ -26,7 +26,7 @@ parser.add_argument('--arch', '-a', metavar='ARCH', default='vgg19',
                     ' (default: vgg19)')
 parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
-parser.add_argument('--epochs', default=300, type=int, metavar='N',
+parser.add_argument('--epochs', default=4, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
@@ -38,7 +38,7 @@ parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
 parser.add_argument('--weight-decay', '--wd', default=5e-4, type=float,
                     metavar='W', help='weight decay (default: 5e-4)')
-parser.add_argument('--print-freq', '-p', default=20, type=int,
+parser.add_argument('--print-freq', '-p', default=2, type=int,
                     metavar='N', help='print frequency (default: 20)')
 parser.add_argument('--resume', default='', type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
@@ -70,7 +70,7 @@ def main():
     model.features = torch.nn.DataParallel(model.features)
     #model.cuda()
 
-    # optionally resume from a checkpoint
+    '''# optionally resume from a checkpoint
     if args.resume:
         if os.path.isfile(args.resume):
             #print "=> loading checkpoint '{}'".format(args.resume)
@@ -82,7 +82,7 @@ def main():
                   .format(args.evaluate, checkpoint['epoch']))
         else:
             pass
-            #print "=> no checkpoint found at '{}'".format(args.resume)
+            #print "=> no checkpoint found at '{}'".format(args.resume)'''
 
     cudnn.benchmark = True
 
@@ -154,45 +154,48 @@ def train(train_loader, model, criterion, optimizer, epoch):
     model.train()
 
     end = time.time()
-    for i, (input, target) in enumerate(train_loader):
+    count = 0
+    while count < 5:
+        for i, (input, target) in enumerate(train_loader):
 
-        # measure data loading time
-        data_time.update(time.time() - end)
+            # measure data loading time
+            data_time.update(time.time() - end)
 
-        target = target#.cuda(async=True)
-        input_var = torch.autograd.Variable(input)#.cuda()
-        target_var = torch.autograd.Variable(target)
-        if args.half:
-            input_var = input_var.half()
+            target = target#.cuda(async=True)
+            input_var = torch.autograd.Variable(input)#.cuda()
+            target_var = torch.autograd.Variable(target)
+            if args.half:
+                input_var = input_var.half()
 
-        # compute output
-        output = model(input_var)
-        loss = criterion(output, target_var)
+            # compute output
+            output = model(input_var)
+            loss = criterion(output, target_var)
 
-        # compute gradient and do SGD step
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+            # compute gradient and do SGD step
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-        output = output.float()
-        loss = loss.float()
-        # measure accuracy and record loss
-        prec1 = accuracy(output.data, target)[0]
-        losses.update(loss.data[0], input.size(0))
-        top1.update(prec1[0], input.size(0))
+            output = output.float()
+            loss = loss.float()
+            # measure accuracy and record loss
+            prec1 = accuracy(output.data, target)[0]
+            losses.update(loss.data, input.size(0))
+            top1.update(prec1, input.size(0))
 
-        # measure elapsed time
-        batch_time.update(time.time() - end)
-        end = time.time()
+            # measure elapsed time
+            batch_time.update(time.time() - end)
+            end = time.time()
 
-        if i % args.print_freq == 0:
-            print('Epoch: [{0}][{1}/{2}]\t'
-                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                  'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
-                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                  'Prec@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
-                      epoch, i, len(train_loader), batch_time=batch_time,
-                      data_time=data_time, loss=losses, top1=top1))
+            if i % args.print_freq == 0:
+                print('Epoch: [{0}][{1}/{2}]\t'
+                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                      'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
+                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                      'Prec@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
+                          epoch, i, len(train_loader), batch_time=batch_time,
+                          data_time=data_time, loss=losses, top1=top1))
+            count += 1
 
 
 def validate(val_loader, model, criterion):
@@ -207,6 +210,8 @@ def validate(val_loader, model, criterion):
     model.eval()
 
     end = time.time()
+    count = 0 
+    while count < 4:
     for i, (input, target) in enumerate(val_loader):
         target = target#.cuda(async=True)
         input_var = torch.autograd.Variable(input, volatile=True)#.cuda()
@@ -224,8 +229,8 @@ def validate(val_loader, model, criterion):
 
         # measure accuracy and record loss
         prec1 = accuracy(output.data, target)[0]
-        losses.update(loss.data[0], input.size(0))
-        top1.update(prec1[0], input.size(0))
+        losses.update(loss.data, input.size(0))
+        top1.update(prec1, input.size(0))
 
         # measure elapsed time
         batch_time.update(time.time() - end)
@@ -238,6 +243,7 @@ def validate(val_loader, model, criterion):
                   'Prec@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
                       i, len(val_loader), batch_time=batch_time, loss=losses,
                       top1=top1))
+        count += 1
 
     print(' * Prec@1 {top1.avg:.3f}'
           .format(top1=top1))
