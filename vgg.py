@@ -49,7 +49,7 @@ def make_layers(config, batch_norm=False):
             else: #add layer of conv, relu
                 layers += [conv2d, nn.ReLU(inplace=True)]
             in_channels = v #update the new input layer going in next layer
-    return nn.Sequential(*layers)
+    return nn.Sequential(*layers) #add the unpacked list of layers to the nn module
 
 config = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M']
 
