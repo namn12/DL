@@ -55,6 +55,7 @@ parser.add_argument('--save-dir', dest='save_dir',
 
 best_prec1 = 0
 
+num_iters = 20
 
 def main():
     global args, best_prec1
@@ -154,10 +155,9 @@ def train(train_loader, model, criterion, optimizer, epoch):
     model.train()
 
     end = time.time()
-    count = 0
-    while count < 5:
-        for i, (input, target) in enumerate(train_loader):
 
+    for i, (input, target) in enumerate(train_loader):
+        if i < num_iters:
             # measure data loading time
             data_time.update(time.time() - end)
 
@@ -186,7 +186,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
-
+            
             if i % args.print_freq == 0:
                 print('Epoch: [{0}][{1}/{2}]\t'
                       'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
@@ -195,7 +195,9 @@ def train(train_loader, model, criterion, optimizer, epoch):
                       'Prec@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
                           epoch, i, len(train_loader), batch_time=batch_time,
                           data_time=data_time, loss=losses, top1=top1))
-            count += 1
+        else:
+            pass
+            
 
 
 def validate(val_loader, model, criterion):
@@ -210,40 +212,40 @@ def validate(val_loader, model, criterion):
     model.eval()
 
     end = time.time()
-    count = 0 
-    while count < 4:
     for i, (input, target) in enumerate(val_loader):
-        target = target#.cuda(async=True)
-        input_var = torch.autograd.Variable(input, volatile=True)#.cuda()
-        target_var = torch.autograd.Variable(target, volatile=True)
+        if i < num_iters:
+            target = target#.cuda(async=True)
+            input_var = torch.autograd.Variable(input, volatile=True)#.cuda()
+            target_var = torch.autograd.Variable(target, volatile=True)
 
-        if args.half:
-            input_var = input_var.half()
+            if args.half:
+                input_var = input_var.half()
 
-        # compute output
-        output = model(input_var)
-        loss = criterion(output, target_var)
+            # compute output
+            output = model(input_var)
+            loss = criterion(output, target_var)
 
-        output = output.float()
-        loss = loss.float()
+            output = output.float()
+            loss = loss.float()
 
-        # measure accuracy and record loss
-        prec1 = accuracy(output.data, target)[0]
-        losses.update(loss.data, input.size(0))
-        top1.update(prec1, input.size(0))
+            # measure accuracy and record loss
+            prec1 = accuracy(output.data, target)[0]
+            losses.update(loss.data, input.size(0))
+            top1.update(prec1, input.size(0))
 
-        # measure elapsed time
-        batch_time.update(time.time() - end)
-        end = time.time()
+            # measure elapsed time
+            batch_time.update(time.time() - end)
+            end = time.time()
 
-        if i % args.print_freq == 0:
-            print('Test: [{0}/{1}]\t'
-                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                  'Prec@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
-                      i, len(val_loader), batch_time=batch_time, loss=losses,
-                      top1=top1))
-        count += 1
+            if i % args.print_freq == 0:
+                print('Test: [{0}/{1}]\t'
+                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                      'Prec@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
+                          i, len(val_loader), batch_time=batch_time, loss=losses,
+                          top1=top1))
+        else: 
+            pass
 
     print(' * Prec@1 {top1.avg:.3f}'
           .format(top1=top1))
