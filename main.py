@@ -13,13 +13,15 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import vgg
 
+#based on the string name in vgg dict, add the vgg model to model_names list. vgg.__dict__ does not contain function within class vgg.
+#iterating through only the keys, else use dict.items() for keys and their values
 model_names = sorted(name for name in vgg.__dict__
     if name.islower() and not name.startswith("__")
                      and name.startswith("vgg")
-                     and callable(vgg.__dict__[name]))
+                     and callable(vgg.__dict__[name])) #sorted() builds sorted list from iterable sequence
 
 
-parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
+parser = argparse.ArgumentParser(description='PyTorch ImageNet Training') #create argument parser object
 parser.add_argument('--arch', '-a', metavar='ARCH', default='vgg19',
                     choices=model_names,
                     help='model architecture: ' + ' | '.join(model_names) +
@@ -59,7 +61,7 @@ num_iters = 20
 
 def main():
     global args, best_prec1
-    args = parser.parse_args()
+    args = parser.parse_args() #parse_args runs the parser function and extracts arguments from command line
 
 
     # Check the save_dir exists or not
