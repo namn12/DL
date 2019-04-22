@@ -1,11 +1,11 @@
-for model in vgg16 vgg16_bn
+for model in vgg16_bn #make this the list of models
 do
-    echo "python main.py  --arch=$model  --save-dir=save_$model |& tee -a log_$model"
+    echo "python main.py  --arch=$model  --save-dir=save_$model |& tee -a log_$model" #print the string on cmd of which command is being executed
     python main.py  --arch=$model  --save-dir=save_$model |& tee -a log_$model
 done
 
-for model in vgg16 vgg16_bn
-do
-    echo "python main.py  --arch=$model --half --save-dir=save_half_$model |& tee -a log_half_$model"
-    python main.py  --arch=$model --half --save-dir=save_half_$model |& tee -a log_half_$model
-done
+#|& is the pipe that puts the output and log information into the log file
+#tee keeps the pipe open
+#$give variable name to arch and such
+#echo executes a command
+#for do done are standard for loop syntax
