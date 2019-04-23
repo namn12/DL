@@ -1,4 +1,5 @@
 '''
+Train and test architecture on cifar10 dataset, record the Topk precision and save model
 Modified from https://github.com/chengyangfu/pytorch-vgg-cifar10
 '''
 
@@ -65,6 +66,7 @@ batch_fraction = .05
  
 
 def main():
+    '''Primary function that runs training and testing'''
     global args, best_prec1 #cant modify global variables inside a function. only have to do once
     args = parser.parse_args() #parse_args runs the parser function and extracts arguments from command line
 

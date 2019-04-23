@@ -1,4 +1,5 @@
 '''
+Assembles a general vgg architecture, and defines function to instantiate a vgg16 with batch norm and vanilla vgg16
 Modified from https://github.com/pytorch/vision
 '''
 
@@ -8,6 +9,7 @@ import torch.nn as nn
 import torch.nn.init as init
 
 class VGG(nn.Module): #make subclass VGG - the super class is inside the parentheses. 
+    '''Creates the layers, instantiates parameters, and defines forward pass of vgg'''
     
     def __init__(self, features):
         super(VGG, self).__init__()
@@ -56,7 +58,9 @@ def make_layers(config, batch_norm=False):
 config = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M']
 
 def vgg16():
+    '''vanilla vgg16 with no batch nrom'''
     return VGG(make_layers(config, batch_norm=False))
 
 def vgg16_bn():
+    '''vgg16 with batch norm between each conv layer'''
     return VGG(make_layers(config, batch_norm=True))
