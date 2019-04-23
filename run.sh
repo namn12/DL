@@ -1,4 +1,5 @@
 '''
+Shell script to run the main.py file that builds and trains the desired model architecture below
 Modified from https://github.com/chengyangfu/pytorch-vgg-cifar10
 '''
 
