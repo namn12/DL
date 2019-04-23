@@ -1,3 +1,7 @@
+'''
+Modified from https://github.com/chengyangfu/pytorch-vgg-cifar10
+'''
+
 import argparse
 import os
 import shutil
@@ -57,7 +61,8 @@ parser.add_argument('--save-dir', dest='save_dir',
 
 best_prec1 = 0
 
-num_iters = 2
+batch_fraction = .05
+ 
 
 def main():
     global args, best_prec1 #cant modify global variables inside a function. only have to do once
@@ -165,7 +170,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
     end = time.time()
 
     for i, (input, target) in enumerate(train_loader): #train_loader returns the images and labels
-        if i < num_iters: #limits the number of iterations per epoch
+        if i < round(batch_fraction*len(train_loader)): #limits the number of iterations per epoch
             # measure data loading time
             data_time.update(time.time() - end)
 
@@ -224,7 +229,7 @@ def validate(val_loader, model, criterion):
 
     end = time.time()
     for i, (input, target) in enumerate(val_loader):
-        if i < num_iters:
+        if i < round(batch_fraction*len(val_loader)):
             #target = target#.cuda(async=True)
             with torch.no_grad():
                 input_var = input

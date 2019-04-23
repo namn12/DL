@@ -1,4 +1,6 @@
-'''Code from torchvision with comments'''
+'''
+Modified from https://github.com/pytorch/vision
+'''
 
 import math
 
