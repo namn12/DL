@@ -104,6 +104,7 @@ def main():
         batch_size=args.batch_size, shuffle=True,
         num_workers=args.workers, pin_memory=False) #pin_memory sends to cuda
 
+    #validation is not shuffled
     val_loader = torch.utils.data.DataLoader(
         datasets.CIFAR10(root='./data', train=False, transform=transforms.Compose([
             transforms.ToTensor(),
@@ -169,8 +170,9 @@ def train(train_loader, model, criterion, optimizer, epoch):
             data_time.update(time.time() - end)
 
             #target = target#.cuda(async=True)
-            input_var = torch.autograd.Variable(input)#.cuda()
-            target_var = torch.autograd.Variable(target)
+            with torch.no_grad():
+                input_var = input
+                target_var = target
             
             #use lower fp precision
             if args.half:
@@ -224,8 +226,9 @@ def validate(val_loader, model, criterion):
     for i, (input, target) in enumerate(val_loader):
         if i < num_iters:
             #target = target#.cuda(async=True)
-            input_var = torch.autograd.Variable(input, volatile=True)#.cuda()
-            target_var = torch.autograd.Variable(target, volatile=True)
+            with torch.no_grad():
+                input_var = input
+                target_var = target
 
             if args.half:
                 input_var = input_var.half()
