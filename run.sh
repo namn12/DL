@@ -1,7 +1,7 @@
 for model in vgg16_bn #make this the list of models
 do
     echo "python main.py  --arch=$model  --save-dir=save_$model |& tee -a log_$model" #print the string on cmd of which command is being executed
-    python main.py  --arch=$model  --save-dir=save_$model |& tee -a log_$model #the |& tee redirects console output to a log file
+    python main.py  --arch=$model  --save-dir=save_$model --epochs=2 |& tee -a log_$model #the |& tee redirects console output to a log file
 done
 
 #|& is the pipe that puts the output and log information into the log file

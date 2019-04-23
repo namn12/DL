@@ -163,22 +163,24 @@ def train(train_loader, model, criterion, optimizer, epoch):
 
     end = time.time()
 
-    for i, (input, target) in enumerate(train_loader):
-        if i < num_iters:
+    for i, (input, target) in enumerate(train_loader): #train_loader returns the images and labels
+        if i < num_iters: #limits the number of iterations per epoch
             # measure data loading time
             data_time.update(time.time() - end)
 
-            target = target#.cuda(async=True)
+            #target = target#.cuda(async=True)
             input_var = torch.autograd.Variable(input)#.cuda()
             target_var = torch.autograd.Variable(target)
+            
+            #use lower fp precision
             if args.half:
                 input_var = input_var.half()
 
             # compute output
-            output = model(input_var)
+            output = model(input_var) #model takes tensor of input data
             loss = criterion(output, target_var)
 
-            # compute gradient and do SGD step
+            # zero gradient, compute losses, SGD step
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -192,7 +194,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
 
             # measure elapsed time
             batch_time.update(time.time() - end)
-            end = time.time()
+            end = time.time() #update new baseline time
             
             if i % args.print_freq == 0:
                 print('Epoch: [{0}][{1}/{2}]\t'
@@ -221,7 +223,7 @@ def validate(val_loader, model, criterion):
     end = time.time()
     for i, (input, target) in enumerate(val_loader):
         if i < num_iters:
-            target = target#.cuda(async=True)
+            #target = target#.cuda(async=True)
             input_var = torch.autograd.Variable(input, volatile=True)#.cuda()
             target_var = torch.autograd.Variable(target, volatile=True)
 
@@ -277,6 +279,7 @@ class AverageMeter(object):
         self.count = 0
 
     def update(self, val, n=1):
+        '''Updates the parameter values. n is the size of batch'''
         self.val = val
         self.sum += val * n
         self.count += n
@@ -292,14 +295,15 @@ def adjust_learning_rate(optimizer, epoch):
 
 def accuracy(output, target, topk=(1,)):
     """Computes the precision@k for the specified values of k"""
-    maxk = max(topk)
+    maxk = max(topk) #set the precision you want to calculate
     batch_size = target.size(0)
 
-    _, pred = output.topk(maxk, 1, True, True)
+    _, pred = output.topk(maxk, 1, True, True) #outputs values, indices of top k categories
     pred = pred.t()
-    correct = pred.eq(target.view(1, -1).expand_as(pred))
+    correct = pred.eq(target.view(1, -1).expand_as(pred)) #expand target to size of pred
 
     res = []
+    #find the fraction of correct images and return the number as res
     for k in topk:
         correct_k = correct[:k].view(-1).float().sum(0)
         res.append(correct_k.mul_(100.0 / batch_size))

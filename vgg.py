@@ -29,7 +29,7 @@ class VGG(nn.Module): #make subclass VGG - the super class is inside the parenth
     
     def forward(self, x):
         '''Performs the forward pass of the network'''
-        x = self.features(x) #forward pass of layers
+        x = self.features(x) #get layers
         x = x.view(x.size(0), -1) #x.view reshapes pytorch tensor is have the first dim shape, and all other dims combined for the second dim
         x = self.classifier(x) #executes final classifier layer
         return x
