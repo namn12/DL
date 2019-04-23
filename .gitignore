@@ -6,11 +6,11 @@ __pycache__/
 #files
 *.tar
 *.ipynb
+*log
+*.log
 
 #folders
 data/
-/data
-/save_vgg16_bn
 save_vgg16_bn/
 
 # C extensions
