@@ -105,3 +105,19 @@ Test: [16/79]	Time 2.165 (2.351)	Loss 2.2610 (2.3052)	Prec@1 22.656 (19.761)
 Test: [18/79]	Time 2.219 (2.336)	Loss 2.1907 (2.2963)	Prec@1 17.969 (19.490)
  * Prec@1 19.297
 Files already downloaded and verified
+Files already downloaded and verified
+Epoch: [0][0/391]	Time 25.712 (25.712)	Data 15.970 (15.970)	Loss 2.3059 (2.3059)	Prec@1 11.719 (11.719)
+Epoch: [0][2/391]	Time 9.640 (15.027)	Data 0.000 (5.323)	Loss 2.2940 (2.3058)	Prec@1 17.188 (12.500)
+Epoch: [0][4/391]	Time 10.115 (12.985)	Data 0.004 (3.195)	Loss 2.3080 (2.3068)	Prec@1 5.469 (10.938)
+Epoch: [0][6/391]	Time 10.291 (12.149)	Data 0.000 (2.282)	Loss 2.2852 (2.3031)	Prec@1 12.500 (11.830)
+Files already downloaded and verified
+Epoch: [0][0/391]	Time 25.927 (25.927)	Data 16.071 (16.071)	Loss 2.2895 (2.2895)	Prec@1 14.062 (14.062)
+main.py:227: UserWarning: volatile was removed and now has no effect. Use `with torch.no_grad():` instead.
+  input_var = torch.autograd.Variable(input, volatile=True)#.cuda()
+main.py:228: UserWarning: volatile was removed and now has no effect. Use `with torch.no_grad():` instead.
+  target_var = torch.autograd.Variable(target, volatile=True)
+Test: [0/79]	Time 9.978 (9.978)	Loss 2.3008 (2.3008)	Prec@1 13.281 (13.281)
+ * Prec@1 13.281
+Epoch: [1][0/391]	Time 26.028 (26.028)	Data 16.275 (16.275)	Loss 2.3187 (2.3187)	Prec@1 13.281 (13.281)
+Test: [0/79]	Time 11.158 (11.158)	Loss 2.3017 (2.3017)	Prec@1 8.594 (8.594)
+ * Prec@1 11.719

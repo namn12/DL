@@ -57,7 +57,7 @@ parser.add_argument('--save-dir', dest='save_dir',
 
 best_prec1 = 0
 
-num_iters = 20
+num_iters = 2
 
 def main():
     global args, best_prec1 #cant modify global variables inside a function. only have to do once
