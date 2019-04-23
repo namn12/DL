@@ -1,3 +1,7 @@
+'''
+Modified from https://github.com/chengyangfu/pytorch-vgg-cifar10
+'''
+
 import argparse
 import os
 import shutil
@@ -27,7 +31,7 @@ parser.add_argument('--arch', '-a', metavar='ARCH', default='vgg19',
                     help='model architecture: ' + ' | '.join(model_names) +
                     ' (default: vgg19)')
 parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
-                    help='number of data loading workers (default: 4)')
+                    help='number of data loading workers (default: 4)') #0 numworkers is default
 parser.add_argument('--epochs', default=4, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
@@ -57,23 +61,25 @@ parser.add_argument('--save-dir', dest='save_dir',
 
 best_prec1 = 0
 
-num_iters = 20
+batch_fraction = .05
+ 
 
 def main():
-    global args, best_prec1
+    global args, best_prec1 #cant modify global variables inside a function. only have to do once
     args = parser.parse_args() #parse_args runs the parser function and extracts arguments from command line
 
 
-    # Check the save_dir exists or not
+    # Check the save_dir exists or not, and make it anew if it does not
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
 
+    #load the model
     model = vgg.__dict__[args.arch]()
 
-    model.features = torch.nn.DataParallel(model.features)
+    #use if you have a gpu and want to parallelize, and the following code is to resume from a prior training checkpoint
+    '''#model.features = torch.nn.DataParallel(model.features)
     #model.cuda()
 
-    '''# optionally resume from a checkpoint
     if args.resume:
         if os.path.isfile(args.resume):
             #print "=> loading checkpoint '{}'".format(args.resume)
@@ -87,11 +93,12 @@ def main():
             pass
             #print "=> no checkpoint found at '{}'".format(args.resume)'''
 
-    cudnn.benchmark = True
+    cudnn.benchmark = True #turn on if input sizes are constant to save time
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
+                                     std=[0.229, 0.224, 0.225]) #sequence of mean and sd for each channel
 
+    #load the images and apply stochastic transformations as well as normalization
     train_loader = torch.utils.data.DataLoader(
         datasets.CIFAR10(root='./data', train=True, transform=transforms.Compose([
             transforms.RandomHorizontalFlip(),
@@ -100,8 +107,9 @@ def main():
             normalize,
         ]), download=True),
         batch_size=args.batch_size, shuffle=True,
-        num_workers=args.workers, pin_memory=True)
+        num_workers=args.workers, pin_memory=False) #pin_memory sends to cuda
 
+    #validation is not shuffled
     val_loader = torch.utils.data.DataLoader(
         datasets.CIFAR10(root='./data', train=False, transform=transforms.Compose([
             transforms.ToTensor(),
@@ -110,23 +118,26 @@ def main():
         batch_size=args.batch_size, shuffle=False,
         num_workers=args.workers, pin_memory=True)
 
-    # define loss function (criterion) and pptimizer
+    # define loss function (criterion)
     criterion = nn.CrossEntropyLoss()#.cuda()
 
+    #to run on 16 floating pt precision
     if args.half:
         model.half()
         criterion.half()
 
+    #set the optimizer to update each of the model parameters(model.parameters()). each optimizer learning rate is decayed at same rate
     optimizer = torch.optim.SGD(model.parameters(), args.lr,
                                 momentum=args.momentum,
                                 weight_decay=args.weight_decay)
 
+    #validation set
     if args.evaluate:
         validate(val_loader, model, criterion)
         return
 
     for epoch in range(args.start_epoch, args.epochs):
-        adjust_learning_rate(optimizer, epoch)
+        adjust_learning_rate(optimizer, epoch) #decay rate
 
         # train for one epoch
         train(train_loader, model, criterion, optimizer, epoch)
@@ -135,8 +146,8 @@ def main():
         prec1 = validate(val_loader, model, criterion)
 
         # remember best prec@1 and save checkpoint
-        is_best = prec1 > best_prec1
-        best_prec1 = max(prec1, best_prec1)
+        is_best = prec1 > best_prec1 #compare new to old
+        best_prec1 = max(prec1, best_prec1) #update prec
         save_checkpoint({
             'epoch': epoch + 1,
             'state_dict': model.state_dict(),
@@ -158,22 +169,25 @@ def train(train_loader, model, criterion, optimizer, epoch):
 
     end = time.time()
 
-    for i, (input, target) in enumerate(train_loader):
-        if i < num_iters:
+    for i, (input, target) in enumerate(train_loader): #train_loader returns the images and labels
+        if i < round(batch_fraction*len(train_loader)): #limits the number of iterations per epoch
             # measure data loading time
             data_time.update(time.time() - end)
 
-            target = target#.cuda(async=True)
-            input_var = torch.autograd.Variable(input)#.cuda()
-            target_var = torch.autograd.Variable(target)
+            #target = target#.cuda(async=True)
+            with torch.no_grad():
+                input_var = input
+                target_var = target
+            
+            #use lower fp precision
             if args.half:
                 input_var = input_var.half()
 
             # compute output
-            output = model(input_var)
+            output = model(input_var) #model takes tensor of input data
             loss = criterion(output, target_var)
 
-            # compute gradient and do SGD step
+            # zero gradient, compute losses, SGD step
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -187,7 +201,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
 
             # measure elapsed time
             batch_time.update(time.time() - end)
-            end = time.time()
+            end = time.time() #update new baseline time
             
             if i % args.print_freq == 0:
                 print('Epoch: [{0}][{1}/{2}]\t'
@@ -215,10 +229,11 @@ def validate(val_loader, model, criterion):
 
     end = time.time()
     for i, (input, target) in enumerate(val_loader):
-        if i < num_iters:
-            target = target#.cuda(async=True)
-            input_var = torch.autograd.Variable(input, volatile=True)#.cuda()
-            target_var = torch.autograd.Variable(target, volatile=True)
+        if i < round(batch_fraction*len(val_loader)):
+            #target = target#.cuda(async=True)
+            with torch.no_grad():
+                input_var = input
+                target_var = target
 
             if args.half:
                 input_var = input_var.half()
@@ -272,6 +287,7 @@ class AverageMeter(object):
         self.count = 0
 
     def update(self, val, n=1):
+        '''Updates the parameter values. n is the size of batch'''
         self.val = val
         self.sum += val * n
         self.count += n
@@ -287,14 +303,15 @@ def adjust_learning_rate(optimizer, epoch):
 
 def accuracy(output, target, topk=(1,)):
     """Computes the precision@k for the specified values of k"""
-    maxk = max(topk)
+    maxk = max(topk) #set the precision you want to calculate
     batch_size = target.size(0)
 
-    _, pred = output.topk(maxk, 1, True, True)
+    _, pred = output.topk(maxk, 1, True, True) #outputs values, indices of top k categories
     pred = pred.t()
-    correct = pred.eq(target.view(1, -1).expand_as(pred))
+    correct = pred.eq(target.view(1, -1).expand_as(pred)) #expand target to size of pred
 
     res = []
+    #find the fraction of correct images and return the number as res
     for k in topk:
         correct_k = correct[:k].view(-1).float().sum(0)
         res.append(correct_k.mul_(100.0 / batch_size))
