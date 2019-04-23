@@ -104,3 +104,4 @@ Test: [14/79]	Time 2.131 (2.375)	Loss 2.4237 (2.2998)	Prec@1 12.500 (19.688)
 Test: [16/79]	Time 2.165 (2.351)	Loss 2.2610 (2.3052)	Prec@1 22.656 (19.761)
 Test: [18/79]	Time 2.219 (2.336)	Loss 2.1907 (2.2963)	Prec@1 17.969 (19.490)
  * Prec@1 19.297
+Files already downloaded and verified

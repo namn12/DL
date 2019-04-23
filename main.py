@@ -27,7 +27,7 @@ parser.add_argument('--arch', '-a', metavar='ARCH', default='vgg19',
                     help='model architecture: ' + ' | '.join(model_names) +
                     ' (default: vgg19)')
 parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
-                    help='number of data loading workers (default: 4)')
+                    help='number of data loading workers (default: 4)') #0 numworkers is default
 parser.add_argument('--epochs', default=4, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
@@ -60,20 +60,21 @@ best_prec1 = 0
 num_iters = 20
 
 def main():
-    global args, best_prec1
+    global args, best_prec1 #cant modify global variables inside a function. only have to do once
     args = parser.parse_args() #parse_args runs the parser function and extracts arguments from command line
 
 
-    # Check the save_dir exists or not
+    # Check the save_dir exists or not, and make it anew if it does not
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
 
+    #load the model
     model = vgg.__dict__[args.arch]()
 
-    model.features = torch.nn.DataParallel(model.features)
+    #use if you have a gpu and want to parallelize, and the following code is to resume from a prior training checkpoint
+    '''#model.features = torch.nn.DataParallel(model.features)
     #model.cuda()
 
-    '''# optionally resume from a checkpoint
     if args.resume:
         if os.path.isfile(args.resume):
             #print "=> loading checkpoint '{}'".format(args.resume)
@@ -87,11 +88,12 @@ def main():
             pass
             #print "=> no checkpoint found at '{}'".format(args.resume)'''
 
-    cudnn.benchmark = True
+    cudnn.benchmark = True #turn on if input sizes are constant to save time
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
+                                     std=[0.229, 0.224, 0.225]) #sequence of mean and sd for each channel
 
+    #load the images and apply stochastic transformations as well as normalization
     train_loader = torch.utils.data.DataLoader(
         datasets.CIFAR10(root='./data', train=True, transform=transforms.Compose([
             transforms.RandomHorizontalFlip(),
@@ -100,7 +102,7 @@ def main():
             normalize,
         ]), download=True),
         batch_size=args.batch_size, shuffle=True,
-        num_workers=args.workers, pin_memory=True)
+        num_workers=args.workers, pin_memory=False) #pin_memory sends to cuda
 
     val_loader = torch.utils.data.DataLoader(
         datasets.CIFAR10(root='./data', train=False, transform=transforms.Compose([
@@ -110,23 +112,26 @@ def main():
         batch_size=args.batch_size, shuffle=False,
         num_workers=args.workers, pin_memory=True)
 
-    # define loss function (criterion) and pptimizer
+    # define loss function (criterion)
     criterion = nn.CrossEntropyLoss()#.cuda()
 
+    #to run on 16 floating pt precision
     if args.half:
         model.half()
         criterion.half()
 
+    #set the optimizer to update each of the model parameters(model.parameters()). each optimizer learning rate is decayed at same rate
     optimizer = torch.optim.SGD(model.parameters(), args.lr,
                                 momentum=args.momentum,
                                 weight_decay=args.weight_decay)
 
+    #validation set
     if args.evaluate:
         validate(val_loader, model, criterion)
         return
 
     for epoch in range(args.start_epoch, args.epochs):
-        adjust_learning_rate(optimizer, epoch)
+        adjust_learning_rate(optimizer, epoch) #decay rate
 
         # train for one epoch
         train(train_loader, model, criterion, optimizer, epoch)
@@ -135,8 +140,8 @@ def main():
         prec1 = validate(val_loader, model, criterion)
 
         # remember best prec@1 and save checkpoint
-        is_best = prec1 > best_prec1
-        best_prec1 = max(prec1, best_prec1)
+        is_best = prec1 > best_prec1 #compare new to old
+        best_prec1 = max(prec1, best_prec1) #update prec
         save_checkpoint({
             'epoch': epoch + 1,
             'state_dict': model.state_dict(),
